@@ -2,56 +2,58 @@
 
 //controllers are taking the request from the frontend(views) and interacting with out models means its act as the middlelayers because the view can not direct interact with model because first we check the authentication or etc so that the first the view can request to the controller
 
-
 //controller are one which are the interacting with models
-const { BOOKS } = require("../models/book");
+const { bookstable } = require("../models/book.model");
+const db = require("../db");
+const eq = require("drizzle-orm");
 
 //model is the database
-exports.getAllBooks = function (req, res) {
-  res.json(BOOKS);
+exports.getAllBooks = async function (req, res) {
+  const books = await db.select().from(bookstable);
+  return res.json(books);
 };
 
-exports.getBookById = function (req, res) {
-  const id = parseInt(req.params.id); // from the parameter  get me the id
+exports.getBookById = async function (req, res) {
+  const id = req.params.id; // from the parameter  get me the id
 
-  if (isNaN(id))
-    return res.status(400).json({ error: `the id must be a number` });
-  const book = BOOKS.find((e) => e.id === id); // this will check type of variable also so in the url you type id as string then you have to parseint the id or you remove one equal to sign
+  const [book] = await db
+    .select()
+    .from(bookstable)
+    .where((table) => eq((table.id, id)))
+    .limit(1); // this will check type of variable also so in the url you type id as string then you have to parseint the id or you remove one equal to sign
 
   if (!book)
     return res.status(404).json({ error: `book with ${id} doesnot exists!` });
   return res.json(book);
 };
 
-exports.createBook = function (req, res) {
-  const { title, author } = req.body;
+exports.createBook = async function (req, res) {
+  const { title, description, authorid } = req.body;
 
   if (!title || title === "")
     return res.status(400).json({ error: "title is required" });
-  if (!author || author === "")
-    return res.status(400).json({ error: "author is required" });
 
-  const id = BOOKS.length + 1;
-  const book = { id, title, author };
-  BOOKS.push(book);
-  // console.log(req.headers);
+  const [result] = await db
+    .insert(bookstable)
+    .values({ title, description, authorid })
+    .returning((id = bookstable.id));
 
-  // console.log(req.body); //undefined --> express has no idea how to read different kind of data its depend on the content type and the based on that the body is processed so the express have concept which is middleware
+  // here we do the Array destructuring means the returning statement will return the array of object but we write the [result] then it will take first value of array object , if we have two value in array
+  //[result]=[{ id: 5 }]
+  //const [row] = result
+  //row = { id: 5 } // row is object
 
-  return res.status(201).json({ message: "Book created successful", id });
+  //If you write only result, it will be the whole array of rows. So you’d access the id like result[0].id, or return the full array.
+
+  return res
+    .status(201)
+    .json({ message: "Book created successful", id: result.id });
 };
 
-exports.deleteBookById = function (req, res) {
-  const id = parseInt(req.params.id);
-  if (isNaN(id))
-    return res.status(400).json({ error: `the id must be a number` });
+exports.deleteBookById = async function (req, res) {
+  const id = req.params.id;
 
-  const indexTodelete = BOOKS.findIndex((e) => e.id === id);
-
-  if (indexTodelete < 0)
-    return res.status(404).json({ error: `book with ${id} doesnot exists!` });
-
-  BOOKS.splice(indexTodelete, 1);
+  await db.delete(bookstable).where((table) => eq(table.id, id));
 
   return res.status(200).json({ message: "Book deleted" });
 };

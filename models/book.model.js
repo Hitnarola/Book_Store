@@ -1,6 +1,5 @@
 const {
   pgTable,
-  integer,
   varchar,
   uuid,
   text,

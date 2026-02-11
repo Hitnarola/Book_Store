@@ -5,10 +5,30 @@
 //controller are one which are the interacting with models
 const booktable = require("../models/book.model");
 const db = require("../db");
-const { eq } = require("drizzle-orm");
+const { eq, ilike } = require("drizzle-orm");
+const { sql } = require("drizzle-orm");
+
+// ilike means ilike is a Drizzle ORM helper for PostgreSQL that does a case-insensitive LIKE match. It translates to SQL ILIKE, so "Harry" matches "harry" too.
 
 //model is the database
 exports.getAllBooks = async function (req, res) {
+  const search = req.query.search;
+
+  // console.log(search);
+
+  if (search) {
+    const books = await db
+      .select()
+      .from(booktable)
+      .where(
+        sql`to_tsvector('english', ${booktable.title}) @@ to_tsquery('english', ${search})`,
+      );
+
+    //.where(ilike(booktable.title, `%${search}%`));
+
+    //if there is the the so many book then `%${search}%` this is slow to search so that we use the indexing
+    return res.json(books);
+  }
   const books = await db.select().from(booktable);
   return res.json(books);
 };

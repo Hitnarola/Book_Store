@@ -3,6 +3,7 @@ const express = require("express");
 
 const app = express();
 const bookrouter = require("./Routes/book.routes");
+const authorRouter = require("./Routes/author.routes");
 
 const { loger } = require("./middleware/loger");
 const PORT = 8000;
@@ -19,6 +20,7 @@ app.use(loger);
 //Routes
 
 app.use("/books", bookrouter); // if there is any routes which starts with/books move(delegate) that request to bookrouter
+app.use("/author", authorRouter);
 
 app.listen(PORT, () => {
   console.log(`HTTP server is running on PORT number ${PORT}`);

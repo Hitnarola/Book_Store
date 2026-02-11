@@ -1,9 +1,6 @@
-//views is the frontend which the user can see
 
-//controllers are taking the request from the frontend(views) and interacting with out models means its act as the middlelayers because the view can not direct interact with model because first we check the authentication or etc so that the first the view can request to the controller
-
-//controller are one which are the interacting with models
 const booktable = require("../models/book.model");
+const authortable = require("../models/author.model");
 const db = require("../db");
 const { eq, ilike } = require("drizzle-orm");
 const { sql } = require("drizzle-orm");
@@ -40,6 +37,7 @@ exports.getBookById = async function (req, res) {
     .select()
     .from(booktable)
     .where((table) => eq(table.id, id))
+    .leftJoin(authortable,eq(booktable.author_id,authortable.id))
     .limit(1); // this will check type of variable also so in the url you type id as string then you have to parseint the id or you remove one equal to sign
 
   if (!book)
